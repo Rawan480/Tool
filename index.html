@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أداة إرسال رسائل القبول — واتساب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --brown:#5C4023;
+    --brown-dark:#3E2B16;
+    --gold:#C9A24B;
+    --gold-light:#E8D5A8;
+    --sand:#FAF6EE;
+    --card:#FFFFFF;
+    --green:#1FA855;
+    --green-dark:#168743;
+    --grey:#8A8172;
+    --line:#E7DEC9;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Tajawal','Arial',sans-serif}
+  body{background:var(--sand);color:var(--brown-dark);min-height:100vh;padding:24px 16px 110px}
+  .wrap{max-width:760px;margin:0 auto}
+
+  header{text-align:center;margin-bottom:28px}
+  .badge{display:inline-block;background:var(--gold-light);color:var(--brown);font-weight:700;font-size:13px;padding:4px 14px;border-radius:100px;margin-bottom:10px;letter-spacing:.3px}
+  h1{font-size:26px;font-weight:800;color:var(--brown)}
+  header p{color:var(--grey);font-size:14px;margin-top:6px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(92,64,35,.05)}
+  .step{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .step-num{width:30px;height:30px;border-radius:50%;background:var(--gold);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .step h2{font-size:17px;font-weight:700;color:var(--brown)}
+  .hint{font-size:13px;color:var(--grey);margin-bottom:10px;line-height:1.7}
+  .hint code{background:var(--gold-light);color:var(--brown);padding:1px 7px;border-radius:6px;font-weight:700;font-family:inherit}
+
+  /* رفع ملف الإكسل */
+  .upload-zone{border:2px dashed var(--gold);background:#FFFDF8;border-radius:12px;padding:22px 16px;text-align:center;cursor:pointer;transition:background .2s,border-color .2s;margin-bottom:12px}
+  .upload-zone:hover,.upload-zone.drag{background:var(--gold-light);border-color:var(--brown)}
+  .upload-zone .up-icon{font-size:30px;margin-bottom:6px}
+  .upload-zone b{display:block;color:var(--brown);font-size:15px}
+  .upload-zone span{font-size:12.5px;color:var(--grey)}
+  #fileInput{display:none}
+  .file-ok{display:none;background:#EAF7EF;color:var(--green-dark);border-radius:10px;padding:10px 14px;font-size:13.5px;font-weight:700;margin-bottom:12px;line-height:1.7}
+
+  .divider{display:flex;align-items:center;gap:12px;color:var(--grey);font-size:13px;font-weight:700;margin:14px 0}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line)}
+
+  textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;resize:vertical;background:#FFFDF8;color:var(--brown-dark);line-height:1.8}
+  textarea:focus{outline:none;border-color:var(--gold)}
+  #numbers{min-height:110px}
+  #message{min-height:170px}
+
+  .name-chip{display:inline-block;background:var(--gold-light);color:var(--brown);border:none;border-radius:100px;padding:6px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px}
+  .name-chip:hover{background:var(--gold);color:#fff}
+
+  .main-btn{display:block;width:100%;background:var(--brown);color:#fff;border:none;border-radius:12px;padding:15px;font-size:17px;font-weight:800;cursor:pointer;transition:background .2s;font-family:inherit}
+  .main-btn:hover{background:var(--brown-dark)}
+
+  #results{display:none}
+  .results-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .counter{font-size:14px;color:var(--grey)}
+  .counter b{color:var(--brown)}
+  .reset-btn{background:none;border:1.5px solid var(--line);color:var(--grey);border-radius:100px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+  .reset-btn:hover{border-color:#B3402A;color:#B3402A}
+
+  .contact{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:10px;transition:opacity .2s}
+  .contact.done{opacity:.45;background:#F2EFE6}
+  .c-info{display:flex;align-items:center;gap:10px;min-width:0}
+  .c-idx{width:26px;height:26px;border-radius:50%;background:var(--gold-light);color:var(--brown);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .c-name{font-weight:700;font-size:15px;color:var(--brown);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .c-num{font-size:13.5px;color:var(--grey);direction:ltr;text-align:right}
+  .send-btn{background:var(--green);color:#fff;text-decoration:none;border-radius:100px;padding:9px 22px;font-size:14px;font-weight:700;white-space:nowrap;transition:background .2s;border:none;cursor:pointer;font-family:inherit}
+  .send-btn:hover{background:var(--green-dark)}
+  .contact.done .send-btn{background:var(--grey);pointer-events:none}
+  .done-label{font-size:12px;color:var(--green-dark);font-weight:700;display:none}
+  .contact.done .done-label{display:inline}
+
+  .error{background:#FBE9E7;color:#B3402A;border-radius:10px;padding:10px 14px;font-size:13px;margin-top:10px;display:none;line-height:1.7}
+
+  /* زر فتح التالي — شريط ثابت أسفل الشاشة */
+  #nextBar{display:none;position:fixed;bottom:0;right:0;left:0;background:rgba(250,246,238,.95);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:12px 16px;z-index:50}
+  #nextBar .inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px}
+  #nextBtn{flex:1;background:var(--green);color:#fff;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;transition:background .2s}
+  #nextBtn:hover{background:var(--green-dark)}
+  #nextBtn:disabled{background:var(--grey);cursor:default}
+  #nextInfo{font-size:13px;color:var(--grey);white-space:nowrap}
+  #nextInfo b{color:var(--brown)}
+
+  footer{text-align:center;margin-top:30px;font-size:12px;color:var(--grey)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="badge">رسائل الواتساب التلقائية</div>
+    <h1>أداة إرسال رسائل القبول</h1>
+    <p>ارفعي ملف الإكسل أو ألصقي الأرقام، اكتبي الرسالة، وأرسلي لكل متقدّم بضغطة واحدة</p>
+  </header>
+
+  <div class="card">
+    <div class="step"><div class="step-num">1</div><h2>ارفعي ملف الإكسل أو ألصقي البيانات</h2></div>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <div class="up-icon">📄</div>
+      <b>اضغطي هنا لاختيار ملف الإكسل</b>
+      <span>أو اسحبي الملف وأفلتيه هنا — يقبل .xlsx و .xls و .csv — يتعرف تلقائيًا على عمود الأسماء وعمود الجوالات</span>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])">
+    <div class="file-ok" id="fileOk"></div>
+
+    <div class="divider">أو ألصقي يدويًا</div>
+
+    <p class="hint">انسخي من الإكسل عمود الأرقام فقط، أو عمودي الاسم والرقم معًا — كل متقدّم في سطر. يقبل الصيغ: 05xxxxxxxx أو 9665xxxxxxxx أو +9665xxxxxxxx</p>
+    <textarea id="numbers" placeholder="محمد العتيبي	0551234567&#10;فهد الحربي	0509876543&#10;0541112233"></textarea>
+    <div class="error" id="numErr"></div>
+  </div>
+
+  <div class="card">
+    <div class="step"><div class="step-num">2</div><h2>اكتبي رسالة القبول</h2></div>
+    <p class="hint">تُكتب مرة واحدة وتُرسل للجميع. اكتبي <code>{الاسم}</code> في أي مكان بالرسالة وسيُستبدل تلقائيًا باسم كل متقدّم.</p>
+    <button class="name-chip" onclick="insertName()">+ إدراج {الاسم}</button>
+    <textarea id="message">السلام عليكم ورحمة الله وبركاته
+
+عزيزنا {الاسم}،
+
+يسرّنا في جمعية كفاء للتنمية الشبابية إبلاغكم بقبولكم في المخيم التدريبي الصيفي.
+
+سيتم تزويدكم بتفاصيل الموعد والمكان قريبًا.
+
+نبارك لكم القبول، وننتظر إبداعكم 🌟</textarea>
+  </div>
+
+  <button class="main-btn" onclick="generate()">إنشاء قائمة الإرسال</button>
+
+  <div id="results">
+    <div class="results-head">
+      <div class="counter" id="counter"></div>
+      <button class="reset-btn" onclick="resetAll()">🗑 مسح والبدء من جديد</button>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <footer>جمعية كفاء للتنمية الشبابية — محافظة العلا</footer>
+</div>
+
+<!-- شريط "إرسال للتالي" الثابت -->
+<div id="nextBar">
+  <div class="inner">
+    <button id="nextBtn" onclick="sendNext()">إرسال للتالي 📤</button>
+    <div id="nextInfo"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- الحالة والحفظ التلقائي ---------- */
+const STORE_KEY = 'kafaa_wa_sender_v2';
+let contacts = []; // [{name, num, done}]
+
+function saveState(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      contacts: contacts,
+      message: document.getElementById('message').value,
+      raw: document.getElementById('numbers').value
+    }));
+  }catch(e){}
+}
+
+function loadState(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if(!s) return;
+    if(s.message) document.getElementById('message').value = s.message;
+    if(s.raw) document.getElementById('numbers').value = s.raw;
+    if(s.contacts && s.contacts.length){
+      contacts = s.contacts;
+      renderList();
+    }
+  }catch(e){}
+}
+
+/* ---------- تنظيف الأرقام ---------- */
+function cleanNumber(raw){
+  let n = String(raw).replace(/[^0-9]/g,'');
+  if(!n) return null;
+  if(n.startsWith('00966')) n = n.slice(2);
+  if(n.startsWith('05') && n.length === 10) n = '966' + n.slice(1);
+  else if(n.startsWith('5') && n.length === 9) n = '966' + n;
+  if(n.startsWith('966') && n.length === 12) return n;
+  return null;
+}
+
+/* ---------- قراءة ملف الإكسل ---------- */
+function handleFile(file){
+  if(!file) return;
+  const err = document.getElementById('numErr');
+  err.style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+      const result = extractFromRows(rows);
+      if(!result.length){
+        showErr('ما لقيت أي رقم جوال سعودي صحيح في الملف. تأكدي أن الملف يحتوي عمودًا للجوالات.');
+        return;
+      }
+      mergeContacts(result);
+      const ok = document.getElementById('fileOk');
+      ok.innerHTML = '✓ تم قراءة الملف «' + file.name + '» — تم التعرف على <b>' + result.length + '</b> متقدّم';
+      ok.style.display = 'block';
+      renderList();
+      saveState();
+      document.getElementById('results').scrollIntoView({behavior:'smooth'});
+    }catch(ex){
+      showErr('تعذّرت قراءة الملف. تأكدي أنه ملف إكسل سليم (.xlsx).');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* التعرف التلقائي على عمود الأسماء وعمود الجوالات */
+function extractFromRows(rows){
+  rows = rows.filter(r => r.some(c => String(c).trim() !== ''));
+  if(!rows.length) return [];
+  const colCount = Math.max(...rows.map(r => r.length));
+
+  // 1) البحث في صف العناوين عن كلمات دالة
+  const phoneKeys = ['جوال','رقم','هاتف','واتساب','phone','mobile','whatsapp','tel'];
+  const nameKeys  = ['اسم','الاسم','متقدم','مستفيد','طالب','متدرب','name'];
+  const header = rows[0].map(c => String(c).trim().toLowerCase());
+  let phoneCol = -1, nameCol = -1, hasHeader = false;
+  header.forEach((h,i)=>{
+    if(phoneCol < 0 && phoneKeys.some(k => h.includes(k))){ phoneCol = i; hasHeader = true; }
+    if(nameCol  < 0 && nameKeys.some(k => h.includes(k))){ nameCol  = i; hasHeader = true; }
+  });
+  // إذا صف العناوين ما فيه أي رقم صحيح فهو غالبًا عناوين
+  if(!hasHeader && !rows[0].some(c => cleanNumber(c))) hasHeader = true;
+  const data = hasHeader ? rows.slice(1) : rows;
+  if(!data.length) return [];
+
+  // 2) إن لم نجد عمود الجوال بالعنوان: العمود الذي فيه أكبر عدد أرقام صحيحة
+  if(phoneCol < 0){
+    let best = -1, bestCount = 0;
+    for(let c = 0; c < colCount; c++){
+      const cnt = data.filter(r => cleanNumber(r[c])).length;
+      if(cnt > bestCount){ bestCount = cnt; best = c; }
+    }
+    phoneCol = best;
+  }
+  if(phoneCol < 0) return [];
+
+  // 3) إن لم نجد عمود الاسم: أول عمود نصي (فيه حروف) غير عمود الجوال
+  if(nameCol < 0){
+    for(let c = 0; c < colCount; c++){
+      if(c === phoneCol) continue;
+      const cnt = data.filter(r => /[\u0600-\u06FFa-zA-Z]/.test(String(r[c]||''))).length;
+      if(cnt >= data.length * 0.3){ nameCol = c; break; }
+    }
+  }
+
+  const out = [];
+  data.forEach(r=>{
+    const num = cleanNumber(r[phoneCol]);
+    if(!num) return;
+    const name = nameCol >= 0 ? String(r[nameCol]||'').trim() : '';
+    out.push({name: name, num: num, done: false});
+  });
+  return out;
+}
+
+/* السحب والإفلات */
+const zone = document.getElementById('uploadZone');
+['dragover','dragenter'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('drag'); }));
+zone.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+/* ---------- اللصق اليدوي ---------- */
+function parsePasted(raw){
+  const out = [];
+  raw.split(/[\n;]+/).map(s => s.trim()).filter(Boolean).forEach(line=>{
+    // نقسم السطر إلى أجزاء (تاب / فاصلة / مسافات متعددة)
+    const parts = line.split(/[\t,،]+|\s{2,}/).map(s => s.trim()).filter(Boolean);
+    let num = null, nameParts = [];
+    parts.forEach(p=>{
+      const c = cleanNumber(p);
+      if(c && !num) num = c;
+      else nameParts.push(p);
+    });
+    // سطر فيه اسم ورقم بمسافة واحدة فقط: نجرب آخر/أول كلمة كرقم
+    if(!num && parts.length === 1){
+      const words = line.split(/\s+/);
+      for(let i = 0; i < words.length; i++){
+        const c = cleanNumber(words[i]);
+        if(c){ num = c; nameParts = words.filter((_,j) => j !== i); break; }
+      }
+    }
+    if(num) out.push({name: nameParts.join(' '), num: num, done: false});
+    else out.push({invalid: line});
+  });
+  return out;
+}
+
+/* ---------- الدمج وإنشاء القائمة ---------- */
+function mergeContacts(newOnes){
+  const seen = new Set(contacts.map(c => c.num));
+  newOnes.forEach(c=>{
+    if(!seen.has(c.num)){ seen.add(c.num); contacts.push(c); }
+  });
+}
+
+function generate(){
+  const raw = document.getElementById('numbers').value.trim();
+  const msg = document.getElementById('message').value.trim();
+  const err = document.getElementById('numErr');
+  err.style.display = 'none';
+
+  if(!msg){ alert('اكتبي نص الرسالة في الخانة رقم 2.'); return; }
+  if(!raw && !contacts.length){ showErr('ارفعي ملف الإكسل أو ألصقي الأرقام أولاً في الخانة رقم 1.'); return; }
+
+  if(raw){
+    const parsed = parsePasted(raw);
+    const invalid = parsed.filter(p => p.invalid).map(p => p.invalid);
+    mergeContacts(parsed.filter(p => !p.invalid));
+    if(invalid.length){
+      err.innerHTML = 'أسطر لم يُتعرّف على رقم فيها (' + invalid.length + '): ' + invalid.map(x => '<span dir="ltr">' + escapeHtml(x) + '</span>').join('، ');
+      err.style.display = 'block';
+    }
+  }
+
+  if(!contacts.length){ showErr('ما فيه أي رقم صحيح. تأكدي أن كل متقدّم في سطر مستقل وبصيغة سعودية.'); return; }
+
+  renderList();
+  saveState();
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+/* ---------- الرسالة المخصصة ---------- */
+function personalMsg(contact){
+  const msg = document.getElementById('message').value.trim();
+  const name = contact.name || 'المتقدّم';
+  return msg.replace(/\{\s*الاسم\s*\}/g, name);
+}
+
+function waLink(contact){
+  return 'https://wa.me/' + contact.num + '?text=' + encodeURIComponent(personalMsg(contact));
+}
+
+function insertName(){
+  const ta = document.getElementById('message');
+  const pos = ta.selectionStart || ta.value.length;
+  ta.value = ta.value.slice(0, pos) + '{الاسم}' + ta.value.slice(pos);
+  ta.focus();
+  saveState();
+}
+
+/* ---------- عرض القائمة ---------- */
+function renderList(){
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  contacts.forEach((c, i)=>{
+    const div = document.createElement('div');
+    div.className = 'contact' + (c.done ? ' done' : '');
+    div.id = 'c' + i;
+    div.innerHTML =
+      '<div class="c-info"><div class="c-idx">' + (i+1) + '</div><div>' +
+        '<div class="c-name">' + escapeHtml(c.name || 'بدون اسم') + '</div>' +
+        '<div class="c-num">+' + c.num + '</div>' +
+        '<span class="done-label">✓ تم الإرسال</span>' +
+      '</div></div>' +
+      '<button class="send-btn" onclick="sendOne(' + i + ')">إرسال 📤</button>';
+    list.appendChild(div);
+  });
+  document.getElementById('results').style.display = 'block';
+  updateCounter();
+}
+
+function sendOne(i){
+  window.open(waLink(contacts[i]), '_blank');
+  setTimeout(()=>{
+    contacts[i].done = true;
+    const el = document.getElementById('c' + i);
+    if(el) el.classList.add('done');
+    updateCounter();
+    saveState();
+  }, 400);
+}
+
+function sendNext(){
+  const i = contacts.findIndex(c => !c.done);
+  if(i < 0) return;
+  const el = document.getElementById('c' + i);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+  sendOne(i);
+}
+
+function updateCounter(){
+  const total = contacts.length;
+  const done = contacts.filter(c => c.done).length;
+  document.getElementById('counter').innerHTML = 'تم الإرسال إلى <b>' + done + '</b> من أصل <b>' + total + '</b>';
+
+  const bar = document.getElementById('nextBar');
+  const btn = document.getElementById('nextBtn');
+  const info = document.getElementById('nextInfo');
+  if(!total){ bar.style.display = 'none'; return; }
+  bar.style.display = 'block';
+  const next = contacts.find(c => !c.done);
+  if(next){
+    btn.disabled = false;
+    btn.textContent = 'إرسال للتالي 📤';
+    info.innerHTML = 'التالي: <b>' + escapeHtml(next.name || ('+' + next.num)) + '</b> — متبقّي ' + (total - done);
+  }else{
+    btn.disabled = true;
+    btn.textContent = '✓ اكتمل الإرسال للجميع';
+    info.textContent = '';
+  }
+}
+
+/* ---------- إعادة الضبط ---------- */
+function resetAll(){
+  if(!confirm('هل تريدين مسح القائمة الحالية والبدء من جديد؟')) return;
+  contacts = [];
+  localStorage.removeItem(STORE_KEY);
+  document.getElementById('numbers').value = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileOk').style.display = 'none';
+  document.getElementById('numErr').style.display = 'none';
+  document.getElementById('list').innerHTML = '';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('nextBar').style.display = 'none';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+/* ---------- أدوات مساعدة ---------- */
+function showErr(t){
+  const err = document.getElementById('numErr');
+  err.textContent = t;
+  err.style.display = 'block';
+}
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* حفظ الرسالة تلقائيًا عند التعديل */
+document.getElementById('message').addEventListener('input', saveState);
+document.getElementById('numbers').addEventListener('input', saveState);
+
+/* استعادة الجلسة السابقة عند فتح الصفحة */
+loadState();
+</script>
+</body>
+</html>
